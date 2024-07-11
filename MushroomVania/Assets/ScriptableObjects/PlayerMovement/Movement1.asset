@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8c91a02a9be64241b5bf42add9d825a, type: 3}
+  m_Name: Movement1
+  m_EditorClassIdentifier: 
+  <MovementForceMode>k__BackingField: 0
+  <MovementSpeed>k__BackingField: 20
+  <UseTargetSpeedMovement>k__BackingField: 0
+  <AccelerationSpeed>k__BackingField: 7
+  <DecelerationSpeed>k__BackingField: 7
+  <VelocityPower>k__BackingField: 0.9
+  <GroundFrictionAmount>k__BackingField: 0.3
+  <UseLerpFriction>k__BackingField: 0
+  <LerpCurve>k__BackingField:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  <LerpSpeed>k__BackingField: 2
+  <TurnForce>k__BackingField: 1
+  <TurnForceMode>k__BackingField: 0
+  <TurnForceDelay>k__BackingField: 0.1
+  <TurnForceConstant>k__BackingField: 3
+  <TurnForceMultiplier>k__BackingField: 1.5
+  <TurnForceAddition>k__BackingField: 10
+  <MaxMoveVelocity>k__BackingField: 8
+  <MaxFallVelocity>k__BackingField: 15
+  <MaxJumpVelocity>k__BackingField: 10

@@ -1,44 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static PlayerMovementData;
 
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("Movement")]
-    [SerializeField] float horizontalSpeed;
-    [SerializeField] ForceMode2D movementForceMode;
-
     float horizontalInput;
-    float horizontalInputLastFrame;
-
-    [Header("Friction")]
-    [SerializeField] float groundFrictionAmount;
-    [SerializeField] bool useLerp;
-
-    [Header("Lerp Based Friction")]
-    [SerializeField] AnimationCurve lerpCurve;
-    [SerializeField] float lerpSpeed;
-
     float current;
     float startVelocity;
-
-    [Header("Quick Turn")]
-    [SerializeField] TurnForceType turnForceType;
-    [SerializeField] ForceMode2D turnForceMode;
-    // Minimum time between two turn forces being added
-    [SerializeField] float turnForceDelay;
-    [SerializeField] float turnForceConstant;
-    [SerializeField] float turnForceMultiplier;
-    [SerializeField] float turnForceAddition;
-
     float turnForceTimer;
 
-    enum TurnForceType { Constant, Multiplicative, Additive, None }
-
-    [Header("Clamping")]
-    [SerializeField] float maxMoveVelocity;
-    [SerializeField] float maxFallVelocity;
-    [SerializeField] float maxJumpVelocity;
+    [Header("Data")]
+    [SerializeField] PlayerMovementData movementData;
 
     [Header("Components")]
     [SerializeField] Rigidbody2D rigidbody;
@@ -47,7 +20,6 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        horizontalInputLastFrame = horizontalInput;
         horizontalInput = Input.GetAxisRaw("Horizontal");
     }
 
@@ -62,38 +34,80 @@ public class PlayerMovement : MonoBehaviour
     // Clamps movement on the x and y axes
     void MovePlayer()
     {
-        Vector2 force = horizontalInput * horizontalSpeed * Vector2.right;
-        rigidbody.AddForce(force, movementForceMode);
+        Vector2 force = movementData.UseTargetSpeedMovement switch
+        {
+            true    => CalculateTargetSpeed() * Vector2.right,
+            false   => horizontalInput * movementData.MovementSpeed * Vector2.right,
+        };
+
+        rigidbody.AddForce(force, movementData.MovementForceMode);
+
+        if (movementData.UseTargetSpeedMovement)
+            return;
 
         Vector2 clampedMovement = new()
         {
-            x = Mathf.Clamp(rigidbody.velocity.x, -maxMoveVelocity, maxMoveVelocity),
-            y = Mathf.Clamp(rigidbody.velocity.y, -maxFallVelocity, maxJumpVelocity)
+            x = Mathf.Clamp(rigidbody.velocity.x, -movementData.MaxMoveVelocity, movementData.MaxMoveVelocity),
+            y = Mathf.Clamp(rigidbody.velocity.y, -movementData.MaxMoveVelocity, movementData.MaxMoveVelocity)
         };
 
         rigidbody.velocity = clampedMovement;
     }
 
+    float targetSpeed;
+    float currentSpeed;
+    float speedDifference;
+
+    float accelerationRate;
+    float movement;
+    // Applies varying degrees of force based on the player's current speed, compared to their maximum speed
+    // Factors in acceleration and deceleration
+    float CalculateTargetSpeed()
+    {
+        targetSpeed = movementData.MovementSpeed * horizontalInput;
+        currentSpeed = rigidbody.velocity.x;
+        speedDifference = targetSpeed - currentSpeed;
+
+        accelerationRate = (Mathf.Abs(targetSpeed) > 0.01f) ? movementData.AccelerationSpeed : movementData.DecelerationSpeed;
+        movement = Mathf.Pow(Mathf.Abs(speedDifference) * accelerationRate, movementData.VelocityPower) * Mathf.Sign(speedDifference);
+
+        return movement;
+    }
+
     // Slows player movement over time using LERP* when no movement keys are being pressed
     void AddFriction()
     {
-        if (horizontalInput != 0)
+        if (Mathf.Abs(horizontalInput) > 0.01)
         {
             current = 0;
             startVelocity = rigidbody.velocity.x;
             return;
         }
 
-        Vector2 newVelocity = rigidbody.velocity;
-        if (useLerp)
+        switch (movementData.FrictionType)
         {
-            current = Mathf.MoveTowards(current, 1, lerpSpeed * Time.fixedDeltaTime);
-            newVelocity.x = Mathf.Lerp(startVelocity, 0, lerpCurve.Evaluate(current));
-        }
-        else
-            newVelocity.x = Mathf.MoveTowards(newVelocity.x, 0, groundFrictionAmount);
+            case FrictionTypes.Lerp:
+                Vector2 newVelocity = rigidbody.velocity;
 
-        rigidbody.velocity = newVelocity;
+                current = Mathf.MoveTowards(current, 1, movementData.LerpSpeed * Time.fixedDeltaTime);
+                newVelocity.x = Mathf.Lerp(startVelocity, 0, movementData.LerpCurve.Evaluate(current));
+                rigidbody.velocity = newVelocity;
+            break;
+
+            case FrictionTypes.Simple:
+                newVelocity = rigidbody.velocity;
+
+                newVelocity.x = Mathf.MoveTowards(newVelocity.x, 0, movementData.GroundFrictionAmount);
+                rigidbody.velocity = newVelocity;
+            break;
+
+            case FrictionTypes.Force:
+                float frictionToAdd = Mathf.Min(Mathf.Abs(rigidbody.velocity.x), Mathf.Abs(movementData.ForceFrictionAmount));
+                frictionToAdd *= Mathf.Sign(rigidbody.velocity.x);
+                rigidbody.AddForce(Vector2.right * -frictionToAdd, ForceMode2D.Impulse);
+            break;
+        }
+
     }
 
     // We want the player to be able to turn quickly when switching directions
@@ -110,21 +124,21 @@ public class PlayerMovement : MonoBehaviour
         {
             Vector2 addForce = new()
             {
-                x = turnForceType switch
+                x = movementData.TurnForceType switch
                 {
-                    TurnForceType.Multiplicative => rigidbody.velocity.x * turnForceMultiplier,
-                    TurnForceType.Additive => rigidbody.velocity.x + turnForceAddition,
-                    TurnForceType.Constant => turnForceConstant,
-                    TurnForceType.None => 0,
+                    TurnForceTypes.Multiplicative => rigidbody.velocity.x * movementData.TurnForceMultiplier,
+                    TurnForceTypes.Additive => rigidbody.velocity.x + movementData.TurnForceAddition,
+                    TurnForceTypes.Constant => movementData.TurnForceConstant,
+                    TurnForceTypes.None => 0,
                     _ => throw new System.NotImplementedException("Turn Force Type not handled"),
                 }
             };
             addForce.x = Mathf.Abs(addForce.x);
 
-            rigidbody.AddForce(addForce * horizontalInput, turnForceMode);
+            rigidbody.AddForce(addForce * horizontalInput, movementData.TurnForceMode);
             Debug.Log($"Added {addForce * horizontalInput} turn force");
 
-            turnForceTimer = turnForceDelay; 
+            turnForceTimer = movementData.TurnForceDelay; 
         }
 
     }
