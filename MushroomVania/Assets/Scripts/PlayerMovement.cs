@@ -35,19 +35,78 @@ public class PlayerMovement : MonoBehaviour
     // Decides what approach to use to move the player
     void MovePlayer()
     {
-        if (movementData.MovementType == MovementTypes.Complex2)
+        float targetSpeed;
+        float movement;
+        switch (movementData.MovementType)
         {
-            Run();
-            return;
-        }
-        Vector2 force = movementData.MovementType switch
-        {
-            MovementTypes.Complex => CalculateComplexMovement() * Vector2.right,
-            MovementTypes.Simple => horizontalInput * movementData.MovementSpeed * Vector2.right,
-            _ => throw new NotImplementedException()
-        };
+            case MovementTypes.Simple:
+                Vector2 force = horizontalInput * movementData.MovementSpeed * Vector2.right;
+                rigidbody.AddForce(force, movementData.MovementForceMode);
+            break;
 
-        rigidbody.AddForce(force, movementData.MovementForceMode);
+            case MovementTypes.Complex:
+                targetSpeed = movementData.MovementSpeed * horizontalInput;
+                float speedDifference = targetSpeed - rigidbody.velocity.x;
+
+                float accelerationRate = (Mathf.Abs(targetSpeed) > 0.01f) ? movementData.AccelerationSpeed : movementData.DecelerationSpeed;
+                movement = Mathf.Pow(Mathf.Abs(speedDifference) * accelerationRate, movementData.VelocityPower) * Mathf.Sign(speedDifference);
+
+                rigidbody.AddForce(movement * Vector2.right, movementData.MovementForceMode);
+            break;
+
+            case MovementTypes.Complex2:
+                //Calculate the direction we want to move in and our desired velocity
+                targetSpeed = horizontalInput * movementData.MovementSpeed;
+
+                #region Calculate AccelRate
+                float accelRate;
+
+                //Gets an acceleration value based on if we are accelerating (includes turning) 
+                //or trying to decelerate (stop). As well as applying a multiplier if we're air borne.
+                if (isGrounded)
+                    accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? movementData.AccelerationSpeed : movementData.DecelerationSpeed;
+                else
+                    accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? movementData.AccelerationSpeed * movementData.AirAccelerationMultiplier : movementData.DecelerationSpeed * movementData.AirDecelerationMultiplier;
+                #endregion
+
+                //Not used since no jump implemented here, but may be useful if you plan to implement your own
+                /* 
+                #region Add Bonus Jump Apex Acceleration
+                //Increase are acceleration and maxSpeed when at the apex of their jump, makes the jump feel a bit more bouncy, responsive and natural
+                if ((IsJumping || IsWallJumping || _isJumpFalling) && Mathf.Abs(RB.velocity.y) < movementData.jumpHangTimeThreshold)
+                {
+                    accelRate *= movementData.jumpHangAccelerationMult;
+                    targetSpeed *= movementData.jumpHangMaxSpeedMult;
+                }
+                #endregion
+                */
+
+                #region Conserve Momentum
+                //We won't slow the player down if they are moving in their desired direction but at a greater speed than their maxSpeed
+                if (movementData.ConserveMomentum && Mathf.Abs(rigidbody.velocity.x) > Mathf.Abs(targetSpeed) && Mathf.Sign(rigidbody.velocity.x) == Mathf.Sign(targetSpeed) && Mathf.Abs(targetSpeed) > 0.01f && isGrounded)
+                {
+                    //Prevent any deceleration from happening, or in other words conserve are current momentum
+                    //You could experiment with allowing for the player to slightly increae their speed whilst in this "state"
+                    accelRate = 0;
+                }
+                #endregion
+
+                //Calculate difference between current velocity and desired velocity
+                float speedDif = targetSpeed - rigidbody.velocity.x;
+                //Calculate force along x-axis to apply to thr player
+
+                movement = speedDif * accelRate;
+
+                //Convert this to a vector and apply to rigidbody
+                rigidbody.AddForce(movement * Vector2.right, ForceMode2D.Force);
+
+                /*
+                 * For those interested here is what AddForce() will do
+                 * RB.velocity = new Vector2(RB.velocity.x + (Time.fixedDeltaTime  * speedDif * accelRate) / RB.mass, RB.velocity.y);
+                 * Time.fixedDeltaTime is by default in Unity 0.02 seconds equal to 50 FixedUpdate() calls per second
+                */
+            break;
+        }
     }
 
     // Limits the player's horizontal and/or vertical movement based on movement setting parameters
@@ -87,60 +146,6 @@ public class PlayerMovement : MonoBehaviour
         float movement = Mathf.Pow(Mathf.Abs(speedDifference) * accelerationRate, movementData.VelocityPower) * Mathf.Sign(speedDifference);
 
         return movement;
-    }
-
-    private void Run()
-    {
-        //Calculate the direction we want to move in and our desired velocity
-        float targetSpeed = horizontalInput * movementData.MovementSpeed;
-
-        #region Calculate AccelRate
-        float accelRate;
-
-        //Gets an acceleration value based on if we are accelerating (includes turning) 
-        //or trying to decelerate (stop). As well as applying a multiplier if we're air borne.
-        if (isGrounded)
-            accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? movementData.AccelerationSpeed : movementData.DecelerationSpeed;
-        else
-            accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? movementData.AccelerationSpeed * movementData.AirAccelerationMultiplier: movementData.DecelerationSpeed * movementData.AirDecelerationMultiplier;
-        #endregion
-
-        //Not used since no jump implemented here, but may be useful if you plan to implement your own
-        /* 
-		#region Add Bonus Jump Apex Acceleration
-		//Increase are acceleration and maxSpeed when at the apex of their jump, makes the jump feel a bit more bouncy, responsive and natural
-		if ((IsJumping || IsWallJumping || _isJumpFalling) && Mathf.Abs(RB.velocity.y) < movementData.jumpHangTimeThreshold)
-		{
-			accelRate *= movementData.jumpHangAccelerationMult;
-			targetSpeed *= movementData.jumpHangMaxSpeedMult;
-		}
-		#endregion
-		*/
-
-        #region Conserve Momentum
-        //We won't slow the player down if they are moving in their desired direction but at a greater speed than their maxSpeed
-        if (movementData.ConserveMomentum && Mathf.Abs(rigidbody.velocity.x) > Mathf.Abs(targetSpeed) && Mathf.Sign(rigidbody.velocity.x) == Mathf.Sign(targetSpeed) && Mathf.Abs(targetSpeed) > 0.01f && isGrounded)
-        {
-            //Prevent any deceleration from happening, or in other words conserve are current momentum
-            //You could experiment with allowing for the player to slightly increae their speed whilst in this "state"
-            accelRate = 0;
-        }
-        #endregion
-
-        //Calculate difference between current velocity and desired velocity
-        float speedDif = targetSpeed - rigidbody.velocity.x;
-        //Calculate force along x-axis to apply to thr player
-
-        float movement = speedDif * accelRate;
-
-        //Convert this to a vector and apply to rigidbody
-        rigidbody.AddForce(movement * Vector2.right, ForceMode2D.Force);
-
-        /*
-		 * For those interested here is what AddForce() will do
-		 * RB.velocity = new Vector2(RB.velocity.x + (Time.fixedDeltaTime  * speedDif * accelRate) / RB.mass, RB.velocity.y);
-		 * Time.fixedDeltaTime is by default in Unity 0.02 seconds equal to 50 FixedUpdate() calls per second
-		*/
     }
 
     // Slows player movement over time using LERP* when no movement keys are being pressed
