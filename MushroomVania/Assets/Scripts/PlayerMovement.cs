@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,57 +20,64 @@ public class PlayerMovement : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    {
-        horizontalInput = Input.GetAxisRaw("Horizontal");
-    }
+        => horizontalInput = Input.GetAxisRaw("Horizontal");
 
     private void FixedUpdate()
     {
         MovePlayer();
         AddFriction();
         AddTurnVelocity();
+        ClampMovement();
     }
 
-    // Uses forces and physics to move the player
-    // Clamps movement on the x and y axes
+    // Decides what approach to use to move the player
     void MovePlayer()
     {
-        Vector2 force = movementData.UseTargetSpeedMovement switch
+        Vector2 force = movementData.MovementType switch
         {
-            true    => CalculateTargetSpeed() * Vector2.right,
-            false   => horizontalInput * movementData.MovementSpeed * Vector2.right,
+            MovementTypes.Complex => CalculateComplexMovement() * Vector2.right,
+            MovementTypes.Simple => horizontalInput * movementData.MovementSpeed * Vector2.right,
+            _ => throw new NotImplementedException()
         };
 
         rigidbody.AddForce(force, movementData.MovementForceMode);
+    }
 
-        if (movementData.UseTargetSpeedMovement)
-            return;
-
+    // Limits the player's horizontal and/or vertical movement based on movement setting parameters
+    void ClampMovement()
+    {
         Vector2 clampedMovement = new()
         {
-            x = Mathf.Clamp(rigidbody.velocity.x, -movementData.MaxMoveVelocity, movementData.MaxMoveVelocity),
-            y = Mathf.Clamp(rigidbody.velocity.y, -movementData.MaxMoveVelocity, movementData.MaxMoveVelocity)
+            x = movementData.ClampType switch
+            {
+                ClampTypes.All or
+                ClampTypes.Horizontal => Mathf.Clamp(rigidbody.velocity.x, -movementData.MaxMoveVelocity, movementData.MaxMoveVelocity),
+
+                _ => rigidbody.velocity.x,
+            },
+
+            y = movementData.ClampType switch
+            {
+                ClampTypes.All or
+                ClampTypes.Vertical => Mathf.Clamp(rigidbody.velocity.y, -movementData.MaxMoveVelocity, movementData.MaxMoveVelocity),
+                ClampTypes.FallOnly => Mathf.Clamp(rigidbody.velocity.y, -movementData.MaxMoveVelocity, int.MaxValue),
+                
+               _ => rigidbody.velocity.y,
+            }
         };
 
         rigidbody.velocity = clampedMovement;
     }
 
-    float targetSpeed;
-    float currentSpeed;
-    float speedDifference;
-
-    float accelerationRate;
-    float movement;
     // Applies varying degrees of force based on the player's current speed, compared to their maximum speed
     // Factors in acceleration and deceleration
-    float CalculateTargetSpeed()
+    float CalculateComplexMovement()
     {
-        targetSpeed = movementData.MovementSpeed * horizontalInput;
-        currentSpeed = rigidbody.velocity.x;
-        speedDifference = targetSpeed - currentSpeed;
+        float targetSpeed = movementData.MovementSpeed * horizontalInput;
+        float speedDifference = targetSpeed - rigidbody.velocity.x;
 
-        accelerationRate = (Mathf.Abs(targetSpeed) > 0.01f) ? movementData.AccelerationSpeed : movementData.DecelerationSpeed;
-        movement = Mathf.Pow(Mathf.Abs(speedDifference) * accelerationRate, movementData.VelocityPower) * Mathf.Sign(speedDifference);
+        float accelerationRate = (Mathf.Abs(targetSpeed) > 0.01f) ? movementData.AccelerationSpeed : movementData.DecelerationSpeed;
+        float movement = Mathf.Pow(Mathf.Abs(speedDifference) * accelerationRate, movementData.VelocityPower) * Mathf.Sign(speedDifference);
 
         return movement;
     }
@@ -84,6 +92,7 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
+        // Decides what approach to use to apply friction
         switch (movementData.FrictionType)
         {
             case FrictionTypes.Lerp:
@@ -124,12 +133,12 @@ public class PlayerMovement : MonoBehaviour
         {
             Vector2 addForce = new()
             {
-                x = movementData.TurnForceType switch
+                x = movementData.QuickTurnType switch
                 {
-                    TurnForceTypes.Multiplicative => rigidbody.velocity.x * movementData.TurnForceMultiplier,
-                    TurnForceTypes.Additive => rigidbody.velocity.x + movementData.TurnForceAddition,
-                    TurnForceTypes.Constant => movementData.TurnForceConstant,
-                    TurnForceTypes.None => 0,
+                    QuickTurnTypes.Multiplicative => rigidbody.velocity.x * movementData.TurnForceMultiplier,
+                    QuickTurnTypes.Additive => rigidbody.velocity.x + movementData.TurnForceAddition,
+                    QuickTurnTypes.Constant => movementData.TurnForceConstant,
+                    QuickTurnTypes.None => 0,
                     _ => throw new System.NotImplementedException("Turn Force Type not handled"),
                 }
             };
@@ -142,4 +151,6 @@ public class PlayerMovement : MonoBehaviour
         }
 
     }
+
+
 }

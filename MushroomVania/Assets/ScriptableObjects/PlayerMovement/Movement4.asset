@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8c91a02a9be64241b5bf42add9d825a, type: 3}
+  m_Name: Movement4
+  m_EditorClassIdentifier: 
+  movementType: 0
+  frictionType: 0
+  quickTurnType: 0
+  clampType: 0
+  movementForceMode: 0
+  movementSpeed: 0
+  accelerationSpeed: 0
+  decelerationSpeed: 0
+  velocityPower: 0
+  groundFrictionAmount: 0
+  forceFrictionAmount: 0
+  lerpCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  lerpSpeed: 0
+  turnForceMode: 0
+  turnForceDelay: 0
+  turnForceAmount: 0
+  turnForceMultiplier: 0
+  turnForceAddition: 0
+  maxMoveVelocity: 0
+  maxFallVelocity: 0
+  maxJumpVelocity: 0

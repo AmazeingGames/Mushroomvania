@@ -1,52 +1,76 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Animations;
 
 [CreateAssetMenu(fileName = "MovementSetting", menuName = "Player/MovementData")]
 public class PlayerMovementData : ScriptableObject
 {
-    [field: Header("Movement")]
-    [field: SerializeField] public ForceMode2D MovementForceMode { get; private set; }
-    [field: SerializeField] public float MovementSpeed { get; private set; }
+    [Header("Settings")]
+    [SerializeField] MovementTypes movementType;
+    [SerializeField] FrictionTypes frictionType;
+    [SerializeField] QuickTurnTypes quickTurnType;
+    [SerializeField] ClampTypes clampType;
 
+    public MovementTypes MovementType => movementType;
+    public FrictionTypes FrictionType => frictionType;
+    public QuickTurnTypes QuickTurnType => quickTurnType;
+    public ClampTypes ClampType => clampType;
 
-    [field: Header("Target Movement")]
-    [field: SerializeField] public bool UseTargetSpeedMovement { get; private set; }
-    [field: SerializeField] public float AccelerationSpeed { get; private set; }
-    [field: SerializeField] public float DecelerationSpeed { get; private set; }
-    [field: SerializeField] public float VelocityPower { get; private set; }
-
-
-    [field: Header("Friction")]
-    [field: SerializeField] [field: Range(0, 1)] public float GroundFrictionAmount { get; private set; }
-
-
-    [field: Header("Force Friction")]
-    [field: SerializeField] public float ForceFrictionAmount { get; private set; }
-
-
-    [field: Header("Lerp Based Friction")]
-    [field: SerializeField] public FrictionTypes FrictionType { get; private set; }
-    [field: SerializeField] public AnimationCurve LerpCurve { get; private set; }
-    [field: SerializeField] public float LerpSpeed { get; private set; }
+    public enum MovementTypes { Simple, Complex }
     public enum FrictionTypes { Simple, Lerp, Force, None }
+    public enum ClampTypes { None, Horizontal, Vertical, FallOnly, All }
+    public enum QuickTurnTypes { None, Constant, Multiplicative, Additive }
 
+    [Header("Simple Movement")]
+    [SerializeField] ForceMode2D movementForceMode;
+    [SerializeField] float movementSpeed;
+    public ForceMode2D MovementForceMode => movementForceMode;
+    public float MovementSpeed => movementSpeed;
+
+    [Header("Complex Movement")]
+    [SerializeField] float accelerationSpeed;
+    [SerializeField] float decelerationSpeed;
+    [SerializeField] float velocityPower;
+    public float AccelerationSpeed => accelerationSpeed;
+    public float DecelerationSpeed => decelerationSpeed;
+    public float VelocityPower => velocityPower;
+
+    [Header("Friction")]
+    [Range(0, 1)] [Tooltip("0 is no friction, whereas 1 is an instant stop; used by MoveTowards to set speed to 0 over time")]
+    [SerializeField] float groundFrictionAmount;
+    public float GroundFrictionAmount => groundFrictionAmount;
+
+    [Header("Force Friction")]
+    [SerializeField] float forceFrictionAmount;
+    public float ForceFrictionAmount => forceFrictionAmount;
+
+    [Header("Lerp Based Friction")]
+    [SerializeField] AnimationCurve lerpCurve;
+    [SerializeField] float lerpSpeed;
+    public AnimationCurve LerpCurve => lerpCurve;
+    public float LerpSpeed => lerpSpeed;
     
-    [field: Header("Quick Turn")]
-    [field: SerializeField] public TurnForceTypes TurnForceType { get; private set; }
-    [field: SerializeField] public ForceMode2D TurnForceMode { get; private set; }
-
+    [Header("Quick Turn")]
+    [SerializeField] ForceMode2D turnForceMode;
     // Minimum time between two turn forces being added
-    [field: SerializeField] public float TurnForceDelay { get; private set; }
-    [field: SerializeField] public float TurnForceConstant { get; private set; }
-    [field: SerializeField] public float TurnForceMultiplier { get; private set; }
-    [field: SerializeField] public float TurnForceAddition { get; private set; }
+    [SerializeField] float turnForceDelay;
+    [SerializeField] float turnForceAmount;
+    [SerializeField] float turnForceMultiplier;
+    [SerializeField] float turnForceAddition;
+    public ForceMode2D TurnForceMode => turnForceMode;
 
-    public enum TurnForceTypes { Constant, Multiplicative, Additive, None }
+    public float TurnForceDelay => turnForceDelay;
+    public float TurnForceConstant => turnForceAmount;
+    public float TurnForceMultiplier => turnForceMultiplier;
+    public float TurnForceAddition => turnForceAddition;
 
+    [Header("Clamping")]
+    [SerializeField] float maxMoveVelocity;
+    [SerializeField] float maxFallVelocity;
+    [SerializeField] float maxJumpVelocity;
 
-    [field: Header("Clamping")]
-    [field: SerializeField] public float MaxMoveVelocity { get; private set; }
-    [field: SerializeField] public float MaxFallVelocity { get; private set; }
-    [field: SerializeField] public float MaxJumpVelocity { get; private set; }
+    public float MaxMoveVelocity => maxMoveVelocity;
+    public float MaxFallVelocity => maxFallVelocity;
+    public float MaxJumpVelocity => maxJumpVelocity;
 }
