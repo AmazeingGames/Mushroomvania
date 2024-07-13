@@ -10,17 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b8c91a02a9be64241b5bf42add9d825a, type: 3}
-  m_Name: Movement5
+  m_Name: HollowComplex
   m_EditorClassIdentifier: 
-  movementType: 0
+  movementType: 2
   frictionType: 0
   quickTurnType: 0
-  clampType: 0
+  clampType: 3
   movementForceMode: 0
-  movementSpeed: 0
-  accelerationSpeed: 0
-  decelerationSpeed: 0
+  movementSpeed: 9.5
+  accelerationSpeed: 9.5
+  decelerationSpeed: 9.5
   velocityPower: 0
+  conserveMomentum: 0
+  airAccelerationMultiplier: 1
+  airDecelerationMultiplier: 1
   groundFrictionAmount: 0
   forceFrictionAmount: 0
   lerpCurve:
@@ -36,5 +39,5 @@ MonoBehaviour:
   turnForceMultiplier: 0
   turnForceAddition: 0
   maxMoveVelocity: 0
-  maxFallVelocity: 0
+  maxFallVelocity: 22
   maxJumpVelocity: 0

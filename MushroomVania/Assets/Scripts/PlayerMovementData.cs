@@ -17,12 +17,12 @@ public class PlayerMovementData : ScriptableObject
     public QuickTurnTypes QuickTurnType => quickTurnType;
     public ClampTypes ClampType => clampType;
 
-    public enum MovementTypes { Simple, Complex }
+    public enum MovementTypes { Simple, Complex, Complex2 }
     public enum FrictionTypes { Simple, Lerp, Force, None }
     public enum ClampTypes { None, Horizontal, Vertical, FallOnly, All }
     public enum QuickTurnTypes { None, Constant, Multiplicative, Additive }
 
-    [Header("Simple Movement")]
+    [Header("Base Movement")]
     [SerializeField] ForceMode2D movementForceMode;
     [SerializeField] float movementSpeed;
     public ForceMode2D MovementForceMode => movementForceMode;
@@ -32,9 +32,15 @@ public class PlayerMovementData : ScriptableObject
     [SerializeField] float accelerationSpeed;
     [SerializeField] float decelerationSpeed;
     [SerializeField] float velocityPower;
+    [SerializeField] bool conserveMomentum;
+    [SerializeField] [Range(0, 1)] float airAccelerationMultiplier;
+    [SerializeField] [Range(0, 1)] float airDecelerationMultiplier;
+    public bool ConserveMomentum => conserveMomentum;
     public float AccelerationSpeed => accelerationSpeed;
     public float DecelerationSpeed => decelerationSpeed;
     public float VelocityPower => velocityPower;
+    public float AirAccelerationMultiplier => airAccelerationMultiplier;
+    public float AirDecelerationMultiplier => airDecelerationMultiplier;
 
     [Header("Friction")]
     [Range(0, 1)] [Tooltip("0 is no friction, whereas 1 is an instant stop; used by MoveTowards to set speed to 0 over time")]
@@ -65,7 +71,7 @@ public class PlayerMovementData : ScriptableObject
     public float TurnForceMultiplier => turnForceMultiplier;
     public float TurnForceAddition => turnForceAddition;
 
-    [Header("Clamping")]
+    //[Header("Clamping")]
     [SerializeField] float maxMoveVelocity;
     [SerializeField] float maxFallVelocity;
     [SerializeField] float maxJumpVelocity;
